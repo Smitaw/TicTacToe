@@ -4,33 +4,33 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import com.myworld.games.GameEngine.WinConfig;
+
 // Strategy pattern.
 // The computer player's behavior/strategy can be replaced by inheriting from the interface below
 // Also, the human player's behavior inherits from the same interface
 // This also makes it easy to modify the game for 2 human players, 2 computer players etc.
 
 public class TicTacToe {
-    private static final String CROSS_STRING = "X";
-    private static final String NOUGHT_STRING = "O";
-    private static final String SLASH = " | ";
+
+    static final String SLASH = " | ";
     protected static final int N = 3;
-    private static final int HSPACE = 20;
-    protected int[][] board;
+    public static final int EMPTY = 0;
+    public static final int CROSS = 1;
+    public static final int NOUGHT = 2;
+    private Board ticTacToeBoard;
+
     private Player currentPlayer;
-    private static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+    public static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-    public enum PlayerTypes {
-        NONE, CROSS, NOUGHT;
-    }
-
-    private Player player1, player2;
+    private Player playerCROSS, playerNOUGHT;
 
     public Player getplayer1() {
-        return player1;
+        return playerCROSS;
     }
 
     public Player getplayer2() {
-        return player2;
+        return playerNOUGHT;
     }
 
     protected static String getUserInput() {
@@ -46,7 +46,7 @@ public class TicTacToe {
     }
 
     public TicTacToe() {
-        initialiseBoard();
+        ticTacToeBoard = new Board();
         initialisePlayers();
     }
 
@@ -57,7 +57,7 @@ public class TicTacToe {
         System.out.println("Enter player 1 name");
         String player1Name = getUserInput();
         String player2Name = new String();
-        player1 = new Player(player1Name, PlayerTypes.NOUGHT.ordinal(), new HumanMove(this));
+        playerCROSS = new Player(player1Name, CROSS, new HumanMove(this));
         if (choice.equals("2")) {
             System.out.println("Enter player 2 name");
             player2Name = getUserInput();
@@ -65,28 +65,19 @@ public class TicTacToe {
                 System.out.println("Please enter different names ");
                 player2Name = getUserInput();
             }
-            player2 = new Player(player2Name, PlayerTypes.CROSS.ordinal(), new HumanMove(this));
-            System.out.println("\nPlayer 1 " + player1.getName() + " vs Player 2 " + player2.getName() + ":");
+            playerNOUGHT = new Player(player2Name, NOUGHT, new HumanMove(this));
+            System.out.println("\nPlayer 1 " + playerCROSS.getName() + " vs Player 2 " + playerNOUGHT.getName() + ":");
         } else {
-            player2 = new Player("Compu", PlayerTypes.CROSS.ordinal(), new SimpleMoveStrategy(this));
-            System.out.println("\nHuman player " + player1.getName() + " vs Computer Player :");
+            playerNOUGHT = new Player("Computer", NOUGHT, new SimpleMoveStrategy(this));
+            System.out.println("\nHuman player " + playerCROSS.getName() + " vs Computer Player :");
         }
 
-    }
-
-    private void initialiseBoard() {
-        board = new int[N][N];
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                board[i][j] = 0;
-            }
-        }
     }
 
     public boolean setMove(int move, int p_type) {
         int x_coord = (move - 1) / 3;
         int y_coord = (move - 1) % 3;
-
+        int[][] board = getBoard();
         if (board[x_coord][y_coord] == 0) {
             board[x_coord][y_coord] = p_type;
             return true;
@@ -96,86 +87,20 @@ public class TicTacToe {
 
     }
 
-    private enum WinConfig {
-        DRAW, WIN, NONE
+    protected int[][] getBoard() {
+        return ticTacToeBoard.get();
     }
 
-    private WinConfig isWinningConfig() {
-        WinConfig w = WinConfig.WIN;
-        // rows
-        for (int i = 0; i < N; i++) {
-            if ((board[i][0] != 0) && (board[i][0] == board[i][1]) && (board[i][0] == board[i][2])) {
-                return w;
-            }
-        }
-        // columns
-        for (int i = 0; i < N; i++) {
-            if ((board[0][i] != 0) && (board[0][i] == board[1][i]) && (board[0][i] == board[2][i])) {
-                return w;
-            }
-        }
-        // diags
-        if ((board[0][0] != 0) && (board[0][0] == board[1][1]) && (board[0][0] == board[2][2])) {
-            return w;
-        }
-
-        if ((board[2][0] != 0) && (board[2][0] == board[1][1]) && (board[2][0] == board[0][2])) {
-            return w;
-        }
-
-        // draw
-        w = WinConfig.DRAW;
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (board[i][j] == 0)
-                    w = WinConfig.NONE;
-            }
-        }
-        return w;
-
-    }
-
-    private String getRowString(int row) {
-
-        String s = "";
-        for (int i = 0; i < N; i++) {
-            switch (board[row][i]) {
-            case 0:
-                s += " ";
-                break;
-            case 1:
-                s += NOUGHT_STRING;
-                break;
-            case 2:
-                s += CROSS_STRING;
-            }
-
-            if (i != N - 1) {
-                s += SLASH;
-            }
-        }
-
-        s += String.format("%" + HSPACE + "s", "");
-
-        for (int i = 0; i < N; i++) {
-            s += row * 3 + i + 1;
-
-            if (i == N - 1) {
-                s += "\n";
-            } else {
-                s += SLASH;
-            }
-        }
-        return s;
-    }
-
-    public String toString() {
-        String s = "";
-        // iterate through the rows
-        for (int i = 0; i < N; i++) {
-            s += getRowString(i);
-        }
-        return s;
+    private static int updatePlayerMove(TicTacToe game) {
+        int move = 0;
+        System.out.println("Player " + game.getCurrentPlayer().getName() + "\'s turn");
+        do {
+            move = game.getCurrentPlayer().getMove();
+        } while (!game.setMove(move, game.getCurrentPlayer().getPlayerType()));
+        System.out.println("\n Player " + game.getCurrentPlayer().getName() + " has added in the "
+                + Formatter.getPosDescription(move));
+        System.out.println(game.display());
+        return move;
     }
 
     public Player getCurrentPlayer() {
@@ -186,31 +111,30 @@ public class TicTacToe {
         currentPlayer = current;
     }
 
+    protected String display() {
+        return ticTacToeBoard.display();
+    }
+
     public static void main(String[] args) {
         System.out.println("Welcome to Tic-Tac-Toe \n");
 
         TicTacToe game = new TicTacToe();
-        WinConfig w = WinConfig.NONE;
 
         System.out.println(
                 "Please make your move selection by entering a number 1-9 corresponding to the movement key on the right.\n");
-        System.out.println(game.toString());
+        System.out.println(game.display());
 
         game.setCurrentPlayer(game.getplayer1());
-        while (game.isWinningConfig() == WinConfig.NONE) {
+        WinConfig winConfig = WinConfig.NONE;
+        while (winConfig == WinConfig.NONE) {
 
-            updatePlayerMove(game);
-
-            w = game.isWinningConfig();
-            if (w == WinConfig.WIN) {
-                System.out.println("");
-                System.out.println(game.getCurrentPlayer().getName() + " have won!");
-                //System.out.println(game.toString());
+            int currentMove = updatePlayerMove(game);
+            winConfig = GameEngine.isWinningConfig(game.getBoard(), currentMove);
+            if (winConfig == WinConfig.WIN) {
+                System.out.println("\n" + game.getCurrentPlayer().getName() + " have won!");
                 break;
-            } else if (w == WinConfig.DRAW) {
-                System.out.println("");
-                System.out.println("Well played. It is a draw!");
-                //System.out.println(game.toString());
+            } else if (winConfig == WinConfig.DRAW) {
+                System.out.println("\n Well played. It is a draw!");
                 break;
             }
             if (game.getCurrentPlayer() == game.getplayer1()) {
@@ -222,15 +146,4 @@ public class TicTacToe {
 
     }
 
-    private static void updatePlayerMove(TicTacToe game) {
-        int move = 0;
-        System.out.println("Player " + game.getCurrentPlayer().getName() + "\'s turn");
-        do {
-            move = game.getCurrentPlayer().getMove();
-        } while (!game.setMove(move, game.getCurrentPlayer().getPlayerType()));
-        System.out.println("");
-        System.out.println("Player " + game.getCurrentPlayer().getName() + " has added in the "
-                + Formatter.getPosDescription(move));
-        System.out.println(game.toString());
-    }
 }
